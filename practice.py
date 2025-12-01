@@ -57,11 +57,19 @@ def patch_embedding():
   patch_emb = model(image)
   print(f"patch_emb.shape {patch_emb.shape}")
 
+def broadcasting():
+  DEVICE = torch.device('cpu')
+  x1 = torch.rand(8, 1, 10, device=DEVICE)
+  x2 = torch.rand(1, 6, 10, device=DEVICE)
+  x3 = torch.rand(8, 6, 1, device=DEVICE)
+  x1 + x2 + x3 # (8, 6, 10)
+
 
 def main():
   # tokenize_image()
   # patch_embedding()
-  tokenize_image()
+  # tokenize_image()
+  broadcasting()
 
 
 if __name__ == '__main__':
