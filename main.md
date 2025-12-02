@@ -71,7 +71,7 @@ In practice, I lean on a surprisingly small toolbox
 
 You’ll see these again and again in almost every model, from simple CNNs to transformers and diffusion models.
 
-### Code katas: The #1 best way to learn how to implement SOTA in PyTroch
+### Code katas: The #1 best way to learn how to implement SOTA in PyTorch
 Literally find a complex model you want to learn, like [CLIP](https://youtu.be/isNBYn_mvI0), memorize each line, even if you don't understand it fully, and implement it repeatedly. Until you can do it from memory.
 
 ---
@@ -174,7 +174,7 @@ If you're not in a production setting, typically, once your shapes are correct a
 
 Also, use the debugger and step through all your modules line-by-line. Do this a lot.
 
-`torch.summary` is a nice tool. But I've personally found that passing through tensors and using the debugger to step through code is the superior route if you want to gain a deep intuition and feel for the flow of tensors.
+`torchinfo.summary` is a nice tool. But I've personally found that passing through tensors and using the debugger to step through code is the superior route if you want to gain a deep intuition and feel for the flow of tensors.
 
 ### Modus PyTorch: Creating comments with the output shapes of tensors, inline
 
@@ -222,8 +222,8 @@ im2 = torch.rand(B, C, H, W, device=DEVICE)   # (B, C, H, W)
 im1 = im1.flatten(2).transpose(1, 2)          # (B, H*W, C)
 im2 = im2.flatten(2)                          # (B, C, H*W)
 
-# I can now do h @ image_toks. This gives
-# us the image tokens of im1 dotted against
+# I can now do im1 @ im2. This gives us
+# the image tokens of im1 dotted against
 # the image tokens of im2
 im1 @ im2                                     # (B, C, C)
 ```
@@ -232,9 +232,9 @@ We’re swapping the “channel” dimension with the “token” dimension so t
 
 ### Toolkit `@`
 
-In the example above we use `@`. This is just syntactic sugar for matrix multiplcation. Enough said!
+In the example above we use `@`. This is just syntactic sugar for matrix multiplication. Enough said!
 
-Before moving on, now that I've explained the necessary essentials, you can take a look at `tokenize_image` in **Example 1** again to see everyting I explained working together.
+Before moving on, now that I've explained the necessary essentials, you can take a look at `tokenize_image` in **Example 1** again to see everything I explained working together.
 
 ---
 
@@ -376,7 +376,7 @@ So you can see in the `broadcast` function above to confirm how the rules check 
 ### Toolkit `expand`
 The `expand` function simply creates a `view` of the data that has a different shape.
 `expand` doesn’t copy data; it gives you a read-only ‘broadcasted view’. That’s perfect for things like class tokens and positional embeddings where you reuse the same parameters across the batch. Just don’t do in-place writes (x += ...) on an expanded tensor—use it as a read-only thing you feed into layers.
-We'll cover `view` in a bit, but for now, just know that `view` is a way of reindixing memory to manipulate the shape of the data with out duplicating it in memory. We can see that `self.cls_token.expand(B, -1, -1)` creates a new output shape as such $(1, 1, D) \to (B, 1, D)$. The `-1` values simply tell `expand` to keep the same value. If a value is other than `-1`, the tensor expands to the given number along that dimension.
+We'll cover `view` in a bit, but for now, just know that `view` is a way of reindexing memory to manipulate the shape of the data with out duplicating it in memory. We can see that `self.cls_token.expand(B, -1, -1)` creates a new output shape as such $(1, 1, D) \to (B, 1, D)$. The `-1` values simply tell `expand` to keep the same value. If a value is other than `-1`, the tensor expands to the given number along that dimension.
 
 ### Toolkit `cat`
 This is simply concatenation. Know it. Get comfortable specifying which dimension you're concatenating along. Concatenation plus linear projection is a highly prolific technique.
@@ -423,7 +423,7 @@ class CrossAttention(nn.Module):
 
     attn = torch.softmax(attn, dim=-1)
     attn = self.dropout(attn @ V) # (B, nh, P, d)
-    attn = attn.transpose(1, 2).contiguous().flatten(2) # (B, P, nh, d)
+    attn = attn.transpose(1, 2).contiguous().flatten(2) # (B, P, img_dim), img_dim = nh*d
 
     return self.proj(attn)
 ```
@@ -471,7 +471,7 @@ x3 = x.view(B * heads, L, D_head)    # merge batch and heads
 
 In the example above, see how we group `heads` and `L` together in dimension 1 of `x2` or `B` and `heads` together in dimension 0 of `x3` without flattening the remainder of the list.
 
-If you try to reorder `x.view(B, L, heads, D_head)`, the operation will be successful, but it's not actually transposing dims 1 and 2. You would have to do `x.transpose(1, 2)` to acheive that.
+If you try to reorder `x.view(B, L, heads, D_head)`, the operation will be successful, but it's not actually transposing dims 1 and 2. You would have to do `x.transpose(1, 2)` to achieve that.
 
 We can infer remaining elements by using -1. In the example above, we use `-1` in `im1.view(b, -1, H*W)` and `im1.view(-1, C, H*W)` because PyTorch can infer the remaining element. We cannot do `im1.view(-1, -1, H*W)` because those two values could be quite a few different combinations of values. If I do `im1.view(B, -1)`, we get `im1` flattened at dimension `1`.
 
@@ -482,10 +482,10 @@ We can infer remaining elements by using -1. In the example above, we use `-1` i
 #### Example 3.3
 
 ```python
-x = torch.randn(B, heads, L, D_head) # (B, heads, L, D_head)
-x.transpose(0, 1).transpose(2, 3) # (heads, H, D_head, L) -> not contiguous anymore
-x.view(.) # -> error
-x.contiguous().view(B, -1) # works just fine!
+x = torch.randn(B, heads, L, D_head)    # (B, heads, L, D_head)
+x.transpose(0, 1).transpose(2, 3)       # (heads, B, D_head, L) -> not contiguous anymore
+x.view(.)                               # -> error
+x.contiguous().view(B, -1)              # works just fine!
 ```
 
 - permute rearranges axes by changing strides → tensor becomes non-contiguous.
@@ -501,24 +501,24 @@ When we want to actually change the order of the elements, not just reshape, we 
 
 ```python
 x = torch.randn(B, heads, L, D_head) # (B, heads, L, D_head)
-x.permute(1, 0, 3, 2)                # (heads, H, D_head, L) -> not contiguous anymore
-x.view(.) # -> error
-x.contiguous().view(B, -1) # works just fine!
+x.permute(1, 0, 3, 2)                # (heads, B, D_head, L) -> not contiguous anymore
+x.view(.)                            # -> error
+x.contiguous().view(B, -1)           # works just fine!
 ```
 
 We can see how I just replaced the composed `transport`s with one `permute`.
 
 ### Toolkit `reshape`
 
-`reshape` reshapes your data in the same way `view` does, but `reshape` actually allocates a tensor with the requested shape and copies data. So it's more permissive than `view` in that it does require data to be contiguous.
+`reshape` reshapes your data in the same way `view` does, but `reshape` actually allocates a tensor with the requested shape and copies data. So it's more permissive than `view` in that it doesn't require data to be contiguous.
 
 #### Example 3.5
 
 ```python
-x = torch.randn(B, C, H, W)
+x = torch.randn(B, C, H, W)        # (B, C, H, W)
 y = x.permute(0, 2, 3, 1)          # non-contiguous shape (B, H, W, C)
 
-y2 = y.view(B, -1)                 # often ERROR: not contiguous
+y2 = y.view(B, -1)                 # ERROR: not contiguous
 y3 = y.reshape(B, -1)              # OK: will copy if needed
 ```
 
@@ -543,6 +543,98 @@ This is a linear projection layer. Neural networks 101. The only thing to rememb
 This is dropout. If you don't know what that is, look it up.
 
 Now, revisit *Example 3* and take it all in. This is a good one to practice as a *Code Kata*.
+
+---
+
+Okay, let's talk about activation functions. Let's revisit **Example 2.1**
+
+### Example 2.1
+
+```python
+class MLP(nn.Module):
+    def __init__(self, dim, hidden_dim):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(dim, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, dim),
+        )
+
+    def forward(self, x):
+        return self.net(x)
+```
+
+### Toolkit `nn.Sequential`
+
+First, let's address `nn.Sequential` module. This module allows you to put modules in a sequence. I mostly use it to create stacked projection layers with an activation in between
+
+### Modus PyTorch: Activations
+
+Here’s a simpler, tighter activations section you can drop in.
+
+---
+
+### Modus PyTorch: Activations
+
+You don’t need to know every activation under the sun. You just need to know what you actually use and why.
+
+In practice, I mentally split them into two buckets.
+
+#### 1. Default deep-net workhorses (hidden layers)
+
+These are the ones you use inside big models:
+
+* `nn.ReLU` (I don't really ever use this)
+* `nn.GELU`
+* `nn.SiLU` / `nn.Swish`
+
+They’re all “ReLU-ish”: mostly zero or small for negative inputs, roughly linear for positive inputs.
+
+You don’t need to overthink the differences:
+
+* ReLU is piecewise linear and can “die” if units stay negative.
+* GELU and SiLU are smooth versions that keep small negative values alive, which is why I use them instead of ReLU
+* Transformers often use GELU.
+* ConvNets / UNets / diffusion models often use SiLU.
+
+My rule of thumb:
+
+* If I’m following a paper, I use whatever it used (usually GELU or SiLU).
+* If I’m choosing for myself, I just pick **GELU or SiLU everywhere** and move on. The exact choice is not where you win or lose.
+
+#### 2. Bounded / squashing activations (output or special cases)
+
+These squeeze values into a fixed range:
+
+* `sigmoid` → (0, 1)
+* `tanh` → (-1, 1)
+* occasionally things like `arctan`, but rarely
+
+They’re useful when you *want* that constraint:
+
+* `sigmoid` for binary or multi-label probabilities.
+* `softmax` (not an activation layer, but same idea) for categorical probabilities over classes or tokens.
+* `tanh` for outputs that should live in [-1, 1] (e.g., pixel values if you normalize images to that range).
+
+I basically **don’t** use `tanh`/`sigmoid` in hidden layers of deep vision/text models because they saturate and kill gradients. I use them at the **output**, when the range matters.
+
+#### The only meta-rule that really matters
+
+Any time you see or choose an activation, ask:
+
+* What range does this put my values in?
+* Is that compatible with the normalization around it (LayerNorm/BatchNorm/etc.) and with the loss I’m using?
+
+If you keep that in mind and:
+
+* use **GELU or SiLU** in hidden layers, and
+* use **sigmoid/softmax/tanh** only when you actually want probabilities or a bounded range,
+
+you’re covered for almost every model you’ll build.
+
+### Toolkit `nn.GroupNorm`
+
+The only normalization I use nowadays is `nn.GroupNorm`. You should know `nn.BatchNorm` because it's used in historical models.
 
 ## (For later)
 #### Using `transpose` and thinking about tensors as part list and part content
