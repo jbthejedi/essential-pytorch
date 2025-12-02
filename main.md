@@ -1,4 +1,4 @@
-# Essential Pytorch to build like a researcher
+# Essential PyTorch to build like a researcher
 
 *This is an original piece. All learnings were hard earned. I only used an LLM to help me codify my intuition into logic and refine my voice*
 
@@ -538,6 +538,10 @@ Yet another way to get tensors into a shape we want it to be in. `unsqueeze` jus
 
 This is a linear projection layer. Neural networks 101. The only thing to remember is that linear always works on the last dimension of your tensor. So if `x.shape` is $(B, L, P)$, then `nn.Linear(P, out_dim)(x)` must be as such, acting on the last dimension.
 
+#### Modus PyTorch: projections
+
+Deeplearning is all about embeddings and projections. Projecting tensors from one dimensional space to another, then performing operations on the tensors in that space. When you can grok this, deep learning really stops feeling like such a big deal.
+
 ### Toolkit `nn.Dropout`
 
 This is dropout. If you don't know what that is, look it up.
@@ -568,13 +572,11 @@ class MLP(nn.Module):
 
 First, let's address `nn.Sequential` module. This module allows you to put modules in a sequence. I mostly use it to create stacked projection layers with an activation in between
 
-### Modus PyTorch: Activations
-
-Here’s a simpler, tighter activations section you can drop in.
-
 ---
 
 ### Modus PyTorch: Activations
+
+![alt text](image.png)
 
 You don’t need to know every activation under the sun. You just need to know what you actually use and why.
 
@@ -636,10 +638,19 @@ you’re covered for almost every model you’ll build.
 
 The only normalization I use nowadays is `nn.GroupNorm`. You should know `nn.BatchNorm` because it's used in historical models.
 
-## (For later)
-#### Using `transpose` and thinking about tensors as part list and part content
-
-In things like multi-head attention, you’ll often treat batch and heads as “list-like” dimensions and the last one or two dimensions as the actual content you’re operating on. `transpose` is how you line those up into the shape that your `@` (matmul) or other ops expect.
-
-
 ## Code Katas
+
+I'm going to do a full article on Code Katas. *Code Kata* is a term coined by [Dave Thomas](codekata.com). A kata is a japanese term for performing a sequence of martial arts moves repeatedly. One does this until their technique is perfect. I'm a BJJ and Muay Thai practicioner. We drill moves, that is we memorize the sequences of moves and perform it with a partner hundreds, honestly, thousands of times, until it becomes second nature. Until you know it intuitively. I'm using the term Code Katas because it uniquely applies to the synthesis of my understanding of coding and martial arts.
+
+It's simple. Find a model you want to build. Memorize it. Implement it, and repeat. Like pull up the original file on the right, and the blank file on the left, and just start typing. Also, understand each line. So you're memorizing the code and understanding it at the same time. Use the reference file as many times as you need to until you have the entire thing memorized. Code it over and over again, until you can code it from memory.
+
+There is something about doing this that starts to clear away all the confusion and answer many little questions you might have. Nothing beats doing. I'm a firm beleiver that you can't really be good at ML unitl you're building the things you theorize about. I was great at theory, but my overall abilities in ML are far stronger now that I can implement models on a deep level.
+
+A great first project is Karpathy's [NanoGPT](https://github.com/karpathy/nanoGPT). That's exactly how I learned to get good at building models. More on this in a separte article.
+
+
+## Final note
+
+The human brain works best when it can flow through techniques intuitively. What I did above was codify the way I intuitively use PyTorch. The only for you to reach this intuition for yourself to do real implementations repeatedly.
+
+Start building! 
