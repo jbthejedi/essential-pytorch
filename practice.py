@@ -65,11 +65,27 @@ def broadcasting():
   x1 + x2 + x3 # (8, 6, 10)
 
 
+def view():
+  B, C = 4, 3
+  H = 4; W = 4
+  im1 = torch.rand(B, C, H, W)                 # (B, C, H, W)
+  im2 = torch.rand(B, C, H, W)                 # (B, C, H, W)
+  h1 = im1.flatten(2).transpose(1, 2)          # (B, H*W, C)
+  h2 = im2.flatten(2)                          # (B, C, H*W)
+
+  matmult = h1 @ h2                                      # (B, C, C)
+
+  # Or I can do this
+  im1.view(B, C, H*W).transpose(1, 2) # (B, H*W, C)
+  im1.view(B, -1, H*W).transpose(1, 2) @ h2
+  h1 @ h2
+
 def main():
   # tokenize_image()
   # patch_embedding()
   # tokenize_image()
-  broadcasting()
+  # broadcasting()
+  view()
 
 
 if __name__ == '__main__':
