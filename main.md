@@ -225,7 +225,7 @@ im2 = im2.flatten(2)                          # (B, C, H*W)
 # I can now do im1 @ im2. This gives us
 # the image tokens of im1 dotted against
 # the image tokens of im2
-im1 @ im2                                     # (B, C, C)
+im1 @ im2                                     # (B, H*W, H*W)
 ```
 
 We’re swapping the “channel” dimension with the “token” dimension so that tokens become the second dimension, which is the standard `(B, L, D)` layout used by transformers.
@@ -644,9 +644,9 @@ I'm going to do a full article on Code Katas. *Code Kata* is a term coined by [D
 
 It's simple. Find a model you want to build. Memorize it. Implement it, and repeat. Like pull up the original file on the right, and the blank file on the left, and just start typing. Also, understand each line. So you're memorizing the code and understanding it at the same time. Use the reference file as many times as you need to until you have the entire thing memorized. Code it over and over again, until you can code it from memory.
 
-There is something about doing this that starts to clear away all the confusion and answer many little questions you might have. Nothing beats doing. I'm a firm beleiver that you can't really be good at ML unitl you're building the things you theorize about. I was great at theory, but my overall abilities in ML are far stronger now that I can implement models on a deep level.
+There is something about doing this that starts to clear away all the confusion and answer many little questions you might have. Nothing beats doing. I'm a firm believer that you can't really be good at ML until you're building the things you theorize about. I was great at theory, but my overall abilities in ML are far stronger now that I can implement models on a deep level.
 
-A great first project is Karpathy's [NanoGPT](https://github.com/karpathy/nanoGPT). That's exactly how I learned to get good at building models. More on this in a separte article.
+A great first project is Karpathy's [NanoGPT](https://github.com/karpathy/nanoGPT). That's exactly how I learned to get good at building models. More on this in a separate article.
 
 
 ## Final note
