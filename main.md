@@ -170,7 +170,7 @@ You can set the device of a newly created tensor to the device of another tensor
 
 Get in the habit of testing your modules with dummy tensors. I typically create a `main` method in the Python module where my PyTorch module lives. I create a tensor using `torch.rand`, I create the PyTorch module in question, and I just pass the tensor through my module.
 
-If you're not in a production setting, typically, once your shapes are correct and the tensor passes through without error, you’ve debugged 90% of the PyTorch mechanics. Most remaining issues are about the math or the training setup, not the tensor wiring.
+If you're not in a production setting, say you're prototyping, typically, once your shapes are correct and the tensor passes through without error, you’ve debugged 90% of the PyTorch mechanics. Most remaining issues are about the math or the training setup, not the tensor wiring.
 
 Also, use the debugger and step through all your modules line-by-line. Do this a lot.
 
@@ -375,8 +375,7 @@ So you can see in the `broadcast` function above to confirm how the rules check 
 
 ### Toolkit `expand`
 The `expand` function simply creates a `view` of the data that has a different shape.
-`expand` doesn’t copy data; it gives you a read-only ‘broadcasted view’. That’s perfect for things like class tokens and positional embeddings where you reuse the same parameters across the batch. Just don’t do in-place writes (x += ...) on an expanded tensor—use it as a read-only thing you feed into layers.
-We'll cover `view` in a bit, but for now, just know that `view` is a way of reindexing memory to manipulate the shape of the data with out duplicating it in memory. We can see that `self.cls_token.expand(B, -1, -1)` creates a new output shape as such $(1, 1, D) \to (B, 1, D)$. The `-1` values simply tell `expand` to keep the same value. If a value is other than `-1`, the tensor expands to the given number along that dimension.
+`expand` doesn’t copy data; it gives you a no-copy ‘broadcasted view’. That’s perfect for things like class tokens and positional embeddings where you reuse the same parameters across the batch. `expand` returns a view with *stride 0* in expanded dimensions. It doesn't copy. *in-place ops on expanded tensors are invalid* (or will error), because multiple positions alias the same memory. Pragmatically, you can think of it as 'read-only'. We'll cover `view` in a bit, but for now, just know that `view` is a way of reindexing memory to manipulate the shape of the data with out duplicating it in memory. We can see that `self.cls_token.expand(B, -1, -1)` creates a new output shape as such $(1, 1, D) \to (B, 1, D)$. The `-1` values simply tell `expand` to keep the same value. If a value is other than `-1`, the tensor expands to the given number along that dimension.
 
 ### Toolkit `cat`
 This is simply concatenation. Know it. Get comfortable specifying which dimension you're concatenating along. Concatenation plus linear projection is a highly prolific technique.
@@ -510,7 +509,11 @@ We can see how I just replaced the composed `transport`s with one `permute`.
 
 ### Toolkit `reshape`
 
-`reshape` reshapes your data in the same way `view` does, but `reshape` actually allocates a tensor with the requested shape and copies data. So it's more permissive than `view` in that it doesn't require data to be contiguous.
+`reshape` reshapes your data in the same way `view` does, but `reshape` returns a view when it can (no copy), and only copies if needed (e.g., non-contiguous layout). So it's more permissive than `view` in that it doesn't require data to be contiguous.
+
+**The right mental model**
+- `view` = must be viewable (contiguous/stride-compatible) or it errors.
+- `reshape` = try to view; otherwise copy.
 
 #### Example 3.5
 
@@ -636,7 +639,7 @@ you’re covered for almost every model you’ll build.
 
 ### Toolkit `nn.GroupNorm`
 
-The only normalization I use nowadays is `nn.GroupNorm`. You should know `nn.BatchNorm` because it's used in historical models.
+In my recent generative builds I reach for `nn.GroupNorm` a lot; `nn.BatchNorm` still matters historically and in many CNN backbones.
 
 ## Code Katas
 
